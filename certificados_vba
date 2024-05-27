@@ -1,0 +1,53 @@
+Sub CriarCertificados()
+
+    ' Definir as variáveis necessárias
+    Dim ppApp As Object
+    Dim ppPres As Object
+    Dim ppSlide As Object
+    Dim ExcelRange As Range
+    Dim cell As Range
+    Dim Nome As String
+
+    ' Configurar a aplicação PowerPoint
+    Set ppApp = CreateObject("PowerPoint.Application")
+    ppApp.Visible = True
+
+    ' Abre o template de certificado no PowerPoint
+    Set ppPres = ppApp.Presentations.Open("C:\caminho\para\seu\template.pptx")
+
+    ' Definir a faixa de células com nomes no Excel
+    Set ExcelRange = ThisWorkbook.Sheets("Sheet1").Range("A1:A" & ThisWorkbook.Sheets("Sheet1").Cells(ThisWorkbook.Sheets("Sheet1").Rows.Count, "A").End(xlUp).Row)
+
+    ' Loop através de cada nome no Excel
+    For Each cell In ExcelRange
+        Nome = cell.Value
+        
+        ' Copia o slide do template
+        ppPres.Slides(1).Copy
+        ' Cola o slide copiado para o fim da apresentação
+        Set ppSlide = ppPres.Slides.Paste(ppPres.Slides.Count + 1)
+        
+        ' Substituir o placeholder pelo nome
+        For Each shape In ppSlide.Shapes
+            If shape.HasTextFrame Then
+                If InStr(shape.TextFrame.TextRange.Text, "[NOME]") > 0 Then
+                    shape.TextFrame.TextRange.Text = Replace(shape.TextFrame.TextRange.Text, "[NOME]", Nome)
+                End If
+            End If
+        Next shape
+        
+        ' Salvar o slide atual como PDF
+        ppSlide.Export "C:\caminho\para\salvar\" & Nome & ".pdf", "PDF"
+        
+        ' Excluir o slide após salvar para não acumular
+        ppPres.Slides(ppPres.Slides.Count).Delete
+    Next cell
+    
+    ' Fechar a apresentação sem salvar e encerrar o PowerPoint
+    ppPres.Close
+    Set ppSlide = Nothing
+    Set ppPres = Nothing
+    ppApp.Quit
+    Set ppApp = Nothing
+
+End Sub
